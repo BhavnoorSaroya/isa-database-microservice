@@ -62,7 +62,7 @@ def before_request():
     # Adjust this as needed to match how the payload is constructed on your side
     payload = request.method + request.path
 
-    # print(signature_header)
+    print(payload)
     # Verify the signature
     if verify_signature(payload, signature_header):
         pass  # Continue processing the request
