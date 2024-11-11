@@ -110,29 +110,29 @@ def close_connection(exception):
 # Updated JWT verification to use RS256
 @app.route('/query', methods=['POST'])
 def run_query():
-    # token = request.cookies.get('jwt')
-    # if not token:
-    #     return jsonify({'message': 'JWT token is required'}), 401
+    token = request.cookies.get('jwt')
+    if not token:
+        return jsonify({'message': 'JWT token is required'}), 401
 
     try:
-        # decoded_token = jwt.decode(token, public_key, algorithms=['RS256'])
-        # email = decoded_token.get('email')
-        # if not email:
-        #     return jsonify({'message': 'Invalid token'}), 401
+        decoded_token = jwt.decode(token, public_key, algorithms=['RS256'])
+        email = decoded_token.get('email')
+        if not email:
+            return jsonify({'message': 'Invalid token'}), 401
 
         db = get_db()
         cursor = db.cursor()
-        # cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
-        # user = cursor.fetchone()
+        cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
 
-        # if not user:
-        #     return jsonify({'message': 'User not found'}), 404
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
 
-        # cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user[0],))
-        # admin = cursor.fetchone()
+        cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user[0],))
+        admin = cursor.fetchone()
 
-        # if not admin:
-            # return jsonify({'message': 'Access denied: user is not an admin'}), 403
+        if not admin:
+            return jsonify({'message': 'Access denied: user is not an admin'}), 403
 
         data = request.get_json()
         query = data.get('query')
