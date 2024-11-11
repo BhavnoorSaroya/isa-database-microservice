@@ -136,6 +136,7 @@ def run_query():
 
         data = request.get_json()
         query = data.get('query')
+        print(query)
 
         if not query:
             return jsonify({'message': 'SQL query is required'}), 400
@@ -150,6 +151,7 @@ def run_query():
     # except jwt.InvalidTokenError:
     #     return jsonify({'message': 'Invalid token'}), 401
     except Exception as e:
+        print(e)
         return jsonify({'error': str(e)}), 500
     
 @app.route('/test', methods=['POST'])
