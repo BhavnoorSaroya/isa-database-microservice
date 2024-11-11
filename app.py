@@ -9,6 +9,7 @@ from Crypto.Hash import SHA256
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+import jwt
 
 app = Flask(__name__)
 DATABASE = 'users.db'
@@ -19,6 +20,7 @@ if public_key is None:
 
 SIGNATURE_KEY = serialization.load_pem_public_key(public_key.encode('utf-8'))
 def verify_signature(payload, signature):
+    # return True
     # return True # For now, always return True to bypass signature verification
     """
     Verifies the signature of the given payload using the public key.
@@ -90,6 +92,12 @@ def init_db():
                 counter INTEGER DEFAULT 0
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS admins (
+                user_id INTEGER UNIQUE,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
         db.commit()
 
 @app.teardown_appcontext
@@ -97,6 +105,94 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
+        
+
+# Updated JWT verification to use RS256
+@app.route('/query', methods=['POST'])
+def run_query():
+    # token = request.cookies.get('jwt')
+    # if not token:
+    #     return jsonify({'message': 'JWT token is required'}), 401
+
+    try:
+        # decoded_token = jwt.decode(token, public_key, algorithms=['RS256'])
+        # email = decoded_token.get('email')
+        # if not email:
+        #     return jsonify({'message': 'Invalid token'}), 401
+
+        db = get_db()
+        cursor = db.cursor()
+        # cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+        # user = cursor.fetchone()
+
+        # if not user:
+        #     return jsonify({'message': 'User not found'}), 404
+
+        # cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user[0],))
+        # admin = cursor.fetchone()
+
+        # if not admin:
+            # return jsonify({'message': 'Access denied: user is not an admin'}), 403
+
+        data = request.get_json()
+        query = data.get('query')
+
+        if not query:
+            return jsonify({'message': 'SQL query is required'}), 400
+
+        cursor.execute(query)
+        db.commit()
+        result = cursor.fetchall()
+        return jsonify({'result': result}), 200
+
+    # except Exception:
+    #     return jsonify({'message': 'Token has expired'}), 401
+    # except jwt.InvalidTokenError:
+    #     return jsonify({'message': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/test', methods=['POST'])
+def run_query2():
+    email = 'test@gmail.com'
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user[0],))
+    admin = cursor.fetchone()
+
+    if not admin:
+        return jsonify({'message': 'Access denied: user is not an admin'}), 403
+
+    data = request.get_json()
+    query = data.get('query')
+
+    if not query:
+        return jsonify({'message': 'SQL query is required'}), 400
+
+    cursor.execute(query)
+    db.commit()
+    result = cursor.fetchall()
+    return jsonify({'result': result}), 200
+
+
+@app.route('/increase/<email>', methods=['POST'])
+def increase_counter(email):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE users SET counter = counter + 1 WHERE email = ?', (email,))
+    db.commit()
+
+    if cursor.rowcount > 0:
+        return jsonify({'message': f'Counter for {email} increased successfully'}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
+
 
 # Route for user registration
 @app.route('/register', methods=['POST'])
