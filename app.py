@@ -183,15 +183,39 @@ def run_query2():
     return jsonify({'result': result}), 200
 
 
+# old method, increase but not return the counter
+# @app.route('/increase/<email>', methods=['POST'])
+# def increase_counter(email):
+#     db = get_db()
+#     cursor = db.cursor()
+#     cursor.execute('UPDATE users SET counter = counter + 1 WHERE email = ?', (email,))
+#     db.commit()
+
+#     if cursor.rowcount > 0:
+#         return jsonify({'message': f'Counter for {email} increased successfully'}), 200
+#     else:
+#         return jsonify({'message': 'User not found'}), 404
+
+
+#new method, increase and return the counter
 @app.route('/increase/<email>', methods=['POST'])
 def increase_counter(email):
     db = get_db()
     cursor = db.cursor()
+
+    # Increase the counter
     cursor.execute('UPDATE users SET counter = counter + 1 WHERE email = ?', (email,))
     db.commit()
 
     if cursor.rowcount > 0:
-        return jsonify({'message': f'Counter for {email} increased successfully'}), 200
+        # Fetch the new counter value
+        cursor.execute('SELECT counter FROM users WHERE email = ?', (email,))
+        new_value = cursor.fetchone()[0]
+        
+        return jsonify({
+            'message': f'Counter for {email} increased successfully',
+            'counter': new_value
+        }), 200
     else:
         return jsonify({'message': 'User not found'}), 404
 
