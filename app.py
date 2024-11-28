@@ -202,6 +202,29 @@ def delete_user():
         return jsonify({'message': 'User not found'}), 404
     
     
+@app.route('/update-usage', methods=['PUT'])
+def update_counter():
+    data = request.get_json()
+    email = data.get('email')
+    counter = data.get('counter')
+
+    if not email or counter is None:
+        return jsonify({'message': 'Email and counter value are required'}), 400
+
+    db = get_db()
+    cursor = db.cursor()
+
+    # Update the counter for the specified user
+    try:
+        cursor.execute('UPDATE users SET counter = ? WHERE email = ?', (counter, email))
+        db.commit()
+
+        if cursor.rowcount > 0:
+            return jsonify({'message': f'Counter for user {email} updated to {counter}'}), 200
+        else:
+            return jsonify({'message': 'User not found'}), 404
+    except Exception as e:
+        return jsonify({'message': 'Error updating counter', 'error': 'something went wrong'}), 500
 
 
 
