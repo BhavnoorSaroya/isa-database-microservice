@@ -153,7 +153,58 @@ def run_query():
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/delete', methods=['DELETE'])
+def delete_user():
+    token = request.cookies.get('jwt')
+    if not token:
+        return jsonify({'message': 'JWT token is required'}), 401
+
+    try:
+        decoded_token = jwt.decode(token, public_key, algorithms=['RS256'])
+        email = decoded_token.get('email')
+        if not email:
+            return jsonify({'message': 'Invalid token'}), 401
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        cursor.execute('SELECT * FROM admins WHERE user_id = ?', (user[0],))
+        admin = cursor.fetchone()
+
+        if not admin:
+            return jsonify({'message': 'Access denied: user is not an admin'}), 403
+    except Exception as e:
+        print(e)
+        return jsonify({'error': "something went wrong"}), 500
+
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'message': 'Email is required'}), 400
+
+    db = get_db()
+    cursor = db.cursor()
+
+    # Attempt to delete the user
+    cursor.execute('DELETE FROM users WHERE email = ?', (email,))
+    db.commit()
+
+    if cursor.rowcount > 0:
+        return jsonify({'message': f'User with email {email} deleted successfully'}), 200
+    else:
+        return jsonify({'message': 'User not found'}), 404
     
+    
+
+
+
 @app.route('/test', methods=['POST'])
 def run_query2():
     email = 'test@gmail.com'
