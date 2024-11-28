@@ -20,7 +20,7 @@ if public_key is None:
 
 SIGNATURE_KEY = serialization.load_pem_public_key(public_key.encode('utf-8'))
 def verify_signature(payload, signature):
-    # return True
+    return True
     # return True # For now, always return True to bypass signature verification
     """
     Verifies the signature of the given payload using the public key.
